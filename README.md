@@ -6,8 +6,8 @@ At this stage, I have shifted to the more short-term goal of developing a genera
 
 ### Points of Interest
 
-Error classes and mapping
+**Error classes and mapping**
 https://github.com/ShaunTS/GoogleDiplomat/tree/master/app/libs/errors
 
-`JsParam[A]` utility for wrapping key-value pairs, while preserving the type and json-serializer of the wrapped type `A`
+**`JsParam[A]` utility for wrapping key-value pairs, while preserving the type and json-serializer of the wrapped type `A`**
 https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/models/JsParams.scala
