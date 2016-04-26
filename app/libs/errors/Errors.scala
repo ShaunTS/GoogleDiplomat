@@ -40,39 +40,3 @@ object MiscThrown extends Diagnosed {
         MiscThrown(e.getMessage, Some(e))
     }
 }
-
-
-    trait Janitor {
-
-        val nomatch = PartialFunction[Throwable, GenError] {
-            case e: Throwable => MiscThrown(e)
-        }
-
-        def errors: List[PartialFunction[Throwable, GenError]]
-
-        lazy val errMap = PiecewiseFunction[Throwable, GenError](this.errors: _ *)
-
-        def apply[T](block: =>T): \/[GenError, T] = {
-            Try { block } match {
-                case Success(s) => \/-(s)
-                case Failure(e) => -\/(errMap(e))
-            }
-        }
-
-        def nested[T](block: => \/[GenError, T]) = Try { block } match {
-            case Success(result: \/-[T]) => result
-            case Success(result: -\/[GenError]) => result
-            case Failure(e) => -\/(errMap(e))
-        }
-    }
-
-    object CatchAll extends Janitor {
-
-        val errors = List(
-            JsonParseError.diagnose,
-            UniqueKeyViolation.diagnose,
-            MiscPSQLError.diagnose,
-            MiscSQLError.diagnose,
-            nomatch
-        )
-    }

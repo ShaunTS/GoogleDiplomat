@@ -142,24 +142,3 @@ object JsonParseError {
         ).withSourceObj(loc.getSourceRef)
     }
 }
-
-
-object JsonFunction extends Janitor {
-
-    val errors = List(JsonParseError.diagnose, nomatch)
-
-    val playJsonErrors = PiecewiseFunction[JsError, JsonPlayError](
-        JsonMissingPath.diagnose,
-        JsonUnexpectedType.diagnose
-    )
-
-    def parse(input: String): \/[GenError, JsValue] = apply { Json.parse(input) }
-
-    def read[T](json: JsValue)(implicit rd: Reads[T]): \/[GenError, T] = nested {
-        rd.reads(json) match {
-            case JsSuccess(js, _) => \/-(js)
-            case e: JsError => -\/(playJsonErrors(e).withSource(json))
-        }
-    }
-
-}

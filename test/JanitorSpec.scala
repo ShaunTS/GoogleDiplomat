@@ -7,7 +7,7 @@ import play.api.test._
 import play.api.test.Helpers._
 import scalaz.{-\/, \/, \/-}
 import sts.libs.errors._
-
+import sts.libs.JsonFunction
 
 class JanitorSpec extends Specification with DisjunctionMatchers {
 

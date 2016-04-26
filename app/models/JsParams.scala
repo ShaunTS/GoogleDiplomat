@@ -6,7 +6,8 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import scala.reflect.ClassTag
 import scalaz.{-\/, \/, \/-}
-import sts.libs.errors.{GenError, JsonFunction, JsonUnexpectedType}
+import sts.libs.JsonFunction
+import sts.libs.errors.{GenError, JsonUnexpectedType}
 import sts.util.debug.helpers._
 import sts.util.Jsonables._
 
