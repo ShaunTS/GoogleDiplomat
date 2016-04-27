@@ -7,17 +7,19 @@ import play.api.test._
 import play.api.test.Helpers._
 import scalaz.{-\/, \/, \/-}
 import sts.libs.errors._
-import sts.libs.JsonFunction
+import sts.libs.{JsonErrorMap, JsonFunctions}
 
-class JanitorSpec extends Specification with DisjunctionMatchers {
+class JsonHandlerSpec extends Specification with DisjunctionMatchers {
 
-    "JsonFunction" should {
+    val JsonHandler = new JsonFunctions(new JsonErrorMap)
+
+    "JsonHandler" should {
 
         val badJson = """{"batchId":2,"orderBy":"name","thing":{"id":1,"name":"dog","rank":1},"types":["mosque","park","casino"}"""
 
         "Catch an exception when parsing malformed json" in {
 
-            val result: \/[GenError, JsValue] = JsonFunction.parse(badJson)
+            val result: \/[GenError, JsValue] = JsonHandler.parse(badJson)
 
             result must be_-\/
 
@@ -37,7 +39,7 @@ class JanitorSpec extends Specification with DisjunctionMatchers {
 
             val testReads = (__ \ "emu").read[Long]
 
-            val result: \/[GenError, Long] = JsonFunction.read(testJsObj)(testReads)
+            val result: \/[GenError, Long] = JsonHandler.fromJson(testJsObj)(testReads)
 
             result must be_-\/
 
@@ -54,7 +56,7 @@ class JanitorSpec extends Specification with DisjunctionMatchers {
 
             val testReads = (__ \ "rank").read[Int]
 
-            val result: \/[GenError, Int] = JsonFunction.read(testJsObj)(testReads)
+            val result: \/[GenError, Int] = JsonHandler.fromJson(testJsObj)(testReads)
 
             result must be_-\/
 

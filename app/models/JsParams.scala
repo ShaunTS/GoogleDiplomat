@@ -1,15 +1,13 @@
 package sts.libs.json
 
-
-
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import scala.reflect.ClassTag
 import scalaz.{-\/, \/, \/-}
-import sts.libs.JsonFunction
 import sts.libs.errors.{GenError, JsonUnexpectedType}
-import sts.util.debug.helpers._
+import sts.libs.JsonOps
 import sts.util.Jsonables._
+
 
 case class JsParam[A](
     key: String,
@@ -17,7 +15,7 @@ case class JsParam[A](
     required: Boolean = false
 )(
     implicit read: Reads[A], write: Writes[A], tag: ClassTag[A]
-) {
+) extends JsonOps {
 
     val rd: Reads[A] = read
     val wrt: Writes[A] = write
@@ -35,14 +33,14 @@ case class JsParam[A](
 
     def stringify: String = Json.stringify(this.toJson)
 
-    def innerJson(outer: JsValue): \/[GenError, JsValue] = JsonFunction.read(outer) {
+    def innerJson(outer: JsValue): \/[GenError, JsValue] = JsonHandler.fromJson(outer) {
         (__ \ this.key).read[JsValue]
     }
 
     def fromJson(json: JsValue): \/[GenError, JsParam[A]] = {
         (for {
             inner <- innerJson(json)
-            jsp <- JsonFunction.read(inner)(this.rd)
+            jsp <- JsonHandler.fromJson(inner)(this.rd)
         } yield jsp ).map {
             case obj: A => this.withValue(obj)
         }

@@ -2,10 +2,9 @@ package sts.libs.errors
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import java.lang.Throwable
-import play.api.data.validation.ValidationError
 import play.api.libs.json._
 import scalaz.{-\/, \/, \/-}
-import sts.libs.functional.{FunctionFragment, PiecewiseFunction}
+import sts.libs.functional.PiecewiseFunction
 
 object JsErrorMessage {
 
