@@ -7,6 +7,12 @@ import play.api.libs.json._
 import scalaz.{-\/, \/, \/-}
 import sts.libs.functional.{FunctionFragment, PiecewiseFunction}
 
+object JsErrorMessage {
+
+    def apply(jse: JsError): String = jse.errors.headOption.map {
+        case (_, (v::vs)) => v.message
+    }.getOrElse("")
+}
 
 trait JsonPlayError extends GenError {
 
@@ -27,12 +33,27 @@ trait JsonPlayError extends GenError {
     )
 }
 
-object PlayJsError {
+case class MiscJsonError(
+    message: String,
+    playError: JsError,
+    source: \/[String, JsValue] = -\/("")
+) extends JsonPlayError {
 
-    def findMessage(jse: JsError): String = jse.errors.headOption.map {
-        case (_, (v::vs)) => v.message
-    }.getOrElse("")
+    def cause = None
+
+    def withSource(src: String) = this.copy(source = -\/(src))
+
+    def withSource(src: JsValue) = this.copy(source = \/-(src))
 }
+object MiscJsonError {
+
+    def diagnose = PartialFunction[JsError, MiscJsonError] {
+        case jse => apply(jse)
+    }
+
+    def apply(jse: JsError): MiscJsonError = MiscJsonError(JsErrorMessage(jse), jse)
+}
+
 
 case class JsonMissingPath(
     message: String,
@@ -50,7 +71,7 @@ case class JsonMissingPath(
 object JsonMissingPath {
 
     def diagnose = PartialFunction[JsError, JsonMissingPath] {
-        case jse if(PlayJsError.findMessage(jse) equals "error.path.missing") => apply(jse)
+        case jse if(JsErrorMessage(jse) equals "error.path.missing") => apply(jse)
     }
 
     def apply(jse: JsError): JsonMissingPath = {
@@ -76,7 +97,7 @@ case class JsonUnexpectedType(
 object JsonUnexpectedType {
 
     def diagnose = PartialFunction[JsError, JsonUnexpectedType] {
-        case jse if(PlayJsError.findMessage(jse) containsSlice "error.expected") => apply(jse)
+        case jse if(JsErrorMessage(jse) containsSlice "error.expected") => apply(jse)
     }
 
     def apply(jse: JsError): JsonUnexpectedType = {
