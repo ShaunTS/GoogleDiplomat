@@ -3,11 +3,7 @@ package sts.libs.errors
 import java.lang.Throwable
 import java.sql.{Connection, SQLException}
 import org.postgresql.util.PSQLException
-import com.fasterxml.jackson.core.JsonProcessingException
-import scala.util.{Failure, Success, Try}
 import scalaz.{-\/, \/, \/-}
-import play.api.libs.json.{JsPath, JsError, JsValue, JsResult, JsSuccess, Reads}
-import sts.util.debug.helpers._
 import sts.libs.functional.{FunctionFragment, PiecewiseFunction}
 
 
