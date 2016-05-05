@@ -13,3 +13,10 @@ tests: https://github.com/ShaunTS/GoogleDiplomat/blob/master/test/ErrorSpec.scal
 **JsParam[A] utility for wrapping key-value pairs, while preserving the type and json-serializer of the wrapped type `A`**  
 source: https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/models/JsParams.scala  
 tests: https://github.com/ShaunTS/GoogleDiplomat/blob/master/test/JsParamSpec.scala
+
+**Postgres Evolutions**
+https://github.com/ShaunTS/GoogleDiplomat/blob/master/conf/evolutions/default/1.sql
+  
+  
+**_In-Progress:_**
+Currently working on filling out the SQLHandler functions that will define all connection bound interactions with the DB. Held up for a couple days figuring out Play's new dependency injection system Guice, which will be used to resolve the different `Database` instances used either by unit tests or the live running application.
