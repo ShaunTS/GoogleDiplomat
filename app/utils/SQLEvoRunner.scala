@@ -13,6 +13,22 @@ import scalaz.{-\/, \/, \/-}
  * given unit test. The purpose being to populate a test database with sample data,
  * for each individual unit test to interact with.
  */
+
+class SQLEvoRunner(val sqlFiles: Seq[String]) {
+
+    lazy val evoFiles: Seq[EvoScript] = sqlFiles.map(EvoScript(_))
+
+    def down(implicit c: Connection): \/[Throwable, Boolean] =
+        evoFiles.reverse.map(_.applyDowns).collectFirst {
+            case e @ -\/(_) => e
+        }.getOrElse(\/-(true))
+
+    def up(implicit c: Connection): \/[Throwable, Boolean] =
+        evoFiles.map(_.applyUps).collectFirst {
+            case e @ -\/(_) => e
+        }.getOrElse(\/-(true))
+}
+
 trait EvoScriptOps {
 
     val upsTag = "# --- !Ups"
@@ -70,28 +86,21 @@ case class EvoScript(
 
     def downs: List[String] = this.downScript.lines
 
-    def applyUps(db: Database): List[Boolean] = {
-        implicit val conn = db.getConnection(autocommit = true)
+    def applyScript(lines: List[String])(implicit c: Connection): \/[Throwable, Boolean] =
+        lines.map(execute).collectFirst {
+            case e @ -\/(_) => e
+        }.getOrElse(\/-(true))
 
-        val result = this.ups.map(execute)
+    def applyUps(implicit c: Connection): \/[Throwable, Boolean] =
+        applyScript(this.ups)(c)
 
-        conn.close()
-        result
-    }
+    def applyDowns(implicit c: Connection): \/[Throwable, Boolean] =
+        applyScript(this.downs)(c)
 
-    def applyDowns(db: Database): List[Boolean] = {
-
-        implicit val conn = db.getConnection(autocommit = true)
-
-        val result = this.downs.map(execute)
-
-        conn.close()
-        result
-    }
-
-    def execute(sql: String)(implicit c: Connection) = {
-        c.createStatement.execute(sql)
-    }
+    def execute(sql: String)(implicit c: Connection): \/[Throwable, Boolean] =
+        \/.fromTryCatchThrowable[Boolean, Throwable] {
+            c.createStatement.execute(sql)
+        }
 }
 
 object EvoScript {
