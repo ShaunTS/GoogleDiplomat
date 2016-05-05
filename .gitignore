@@ -8,3 +8,4 @@ target
 /RUNNING_PID
 /real_data
 conf/apisConfig.conf
+conf/logback.xml
