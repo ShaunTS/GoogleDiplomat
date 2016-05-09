@@ -1,32 +1,39 @@
-package sts.util.dbrunner
+package sts.util.db
 
-import scala.io.{BufferedSource}
 import java.sql.Connection
 import play.api.db.Database
 import scalaz.{-\/, \/, \/-}
 
 
-/** CONTENTS (WORK IN PROGRESS)
- *
- * When finished, the classes contained in this file will be used to run SQL scripts
- * (written in evolutions format with !Ups and !Downs sections) before and after a
- * given unit test. The purpose being to populate a test database with sample data,
- * for each individual unit test to interact with.
+/**
+ * The classes in this file can be used to run SQL scripts (written in evolutions
+ * format with !Ups and !Downs sections) before and after a given unit test. The
+ * purpose being to populate a test database with sample data, for each individual
+ * unit test to interact with.
  */
 
-class SQLEvoRunner(val sqlFiles: Seq[String]) {
+class EvoScriptRunner(val sqlFiles: Seq[String], db: Database) {
 
     lazy val evoFiles: Seq[EvoScript] = sqlFiles.map(EvoScript(_))
 
-    def down(implicit c: Connection): \/[Throwable, Boolean] =
+    def down: \/[Throwable, Boolean] = db.withConnection { implicit c =>
         evoFiles.reverse.map(_.applyDowns).collectFirst {
             case e @ -\/(_) => e
         }.getOrElse(\/-(true))
+    }
 
-    def up(implicit c: Connection): \/[Throwable, Boolean] =
+    def up: \/[Throwable, Boolean] = db.withConnection { implicit c =>
         evoFiles.map(_.applyUps).collectFirst {
             case e @ -\/(_) => e
         }.getOrElse(\/-(true))
+    }
+
+    def uncatch(result: \/[Throwable, Boolean]): Unit = result.swap.foreach(throw _)
+
+    def unsafeUp() = uncatch(up)
+
+    def unsafeDown() = uncatch(down)
+
 }
 
 trait EvoScriptOps {
@@ -112,12 +119,3 @@ object EvoScript {
         EvoScript(path, content, Ups(content), Downs(content))
     }
 }
-
-
-// val files = List(
-//     "test/snapshots/test_sql_file.sql",
-//     "test/snapshots/just_downsA.sql",
-//     "test/snapshots/just_downsB.sql",
-//     "test/snapshots/just_upsA.sql",
-//     "test/snapshots/just_upsB.sql"
-// ).map(io.Source.fromFile(_).mkString)
