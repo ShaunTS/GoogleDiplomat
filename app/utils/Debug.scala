@@ -32,15 +32,31 @@ package object helpers {
         if(stack.length > 3)
             println(s"\n\t${stack.length - 3} remaining in stack.")
     }
+
+    case class NoError(message: String = "") extends Throwable
+
 }
 
 package object psqlHelpers {
     import java.sql.{Connection, DatabaseMetaData, SQLException}
     import org.postgresql.util.{PSQLException, PSQLState, ServerErrorMessage}
+    import scalaz.{-\/, \/, \/-}
+    import scala.util.{Failure, Success, Try}
+
 
     def printMeta(implicit c: Connection) {
         val info = c.getMetaData
         println("db-url = " +info.getURL)
+    }
+
+    object ReportPSQLErrors {
+
+        def apply[T](block: => T): T =
+            Try(block) match {
+                case Failure(e: PSQLException) => printExc(e); throw helpers.NoError()
+                case Failure(e) => throw e
+                case Success(s) => s
+            }
     }
 
     def printServerMsg(msg: ServerErrorMessage) {
