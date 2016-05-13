@@ -2,7 +2,8 @@ package sts.diplomat.models
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{__, Reads, Writes, Json}
-
+import anorm.{ ~, RowParser }
+import anorm.SqlParser._
 
 /** CONTENTS
  *
@@ -17,6 +18,12 @@ case class Coords(lat: Double, lng: Double) {
 }
 
 object Coords {
+
+    def parser(tableName: String): RowParser[Coords] = {
+        double(s"$tableName.lat") ~ double(s"$tableName.lng") map {
+            case lat~lng => Coords(lat, lng)
+        }
+    }
 
     implicit val writes: Writes[Coords] = Json.writes[Coords]
 
