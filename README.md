@@ -6,17 +6,14 @@ At this stage, I have shifted to the more short-term goal of developing a genera
 
 ### Points of Interest
 
-**Error classes and mapping**([_Source_](https://github.com/ShaunTS/GoogleDiplomat/tree/master/app/libs/errors)/[_Tests_](https://github.com/ShaunTS/GoogleDiplomat/blob/master/test/ErrorSpec.scala))
+**Error classes and mapping**([Source](https://github.com/ShaunTS/GoogleDiplomat/tree/master/app/libs/errors) / [Tests](https://github.com/ShaunTS/GoogleDiplomat/blob/master/test/ErrorSpec.scala))  
   
 **JsParam[A]**  
-Utility for wrapping key-value pairs, while preserving the type and json-serializer of the wrapped type `A`  
- ...[_Source_](https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/models/JsParams.scala)..
- ...[_Tests_](https://github.com/ShaunTS/GoogleDiplomat/blob/master/test/JsParamSpec.scala)..
+Utility for wrapping key-value pairs, while preserving the type and json-serializer of the wrapped type `A` ([Source](https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/models/JsParams.scala) / [Tests](https://github.com/ShaunTS/GoogleDiplomat/blob/master/test/JsParamSpec.scala))  
 
-**Postgres Evolutions**  
- ...[_Source_](https://github.com/ShaunTS/GoogleDiplomat/blob/master/conf/evolutions/default/1.sql)..  
+**Postgres Evolutions** ([Source](https://github.com/ShaunTS/GoogleDiplomat/blob/master/conf/evolutions/default/1.sql))  
    
-**PSQLHandler (Postgres database handler)**  
- ...Functionally defines how data will be sent to and from a Postgres database. That is to say every function in the defining class `PSQLFunctions` will accept some other function that uses a [`java.sql.Connection`](https://docs.oracle.com/javase/7/docs/api/java/sql/Connection.html), execute the function within the scope of an open connection, and catch any exceptions that may occur mapping them to [custom error classes](https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/libs/errors/PostgresErrors.scala). ..  
- ...[_Source_](https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/libs/PSQLHandler.scala)..
+**PSQLHandler (Postgres database handler)** ([Source](https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/libs/PSQLHandler.scala))  
+ ⋅⋅⋅Functionally defines how data will be sent to and from a Postgres database. That is to say every function in the defining class `PSQLFunctions` will accept some other function that uses a [`java.sql.Connection`](https://docs.oracle.com/javase/7/docs/api/java/sql/Connection.html), execute the function within the scope of an open connection, and catch any exceptions that may occur mapping them to [custom error classes](https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/libs/errors/PostgresErrors.scala).⋅⋅
+
   
