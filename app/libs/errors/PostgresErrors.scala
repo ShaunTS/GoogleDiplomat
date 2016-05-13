@@ -8,9 +8,22 @@ import sts.libs.functional.{FunctionFragment, PiecewiseFunction}
 
 
 
-trait SQLError extends GenError {
+trait SQLError[E] extends GenError {
     def dbURL: Option[String]
     def table: Option[String]
+
+    def withURL(url: String): E
+}
+
+case class SQLNoResult(
+    message: String,
+    table: Option[String],
+    dbURL: Option[String]
+) extends SQLError[SQLNoResult] {
+
+    val cause = None
+
+    def withURL(url: String) = this.copy(dbURL = Some(url))
 }
 
 case class MiscSQLError(
@@ -19,9 +32,11 @@ case class MiscSQLError(
     sqlState: String,
     dbURL: Option[String] = None,
     table: Option[String] = None
-) extends SQLError {
+) extends SQLError[MiscSQLError] {
 
     def cause = Some(this.sqlError)
+
+    def withURL(url: String) = this.copy(dbURL = Some(url))
 }
 
 object MiscSQLError extends Diagnosed {
@@ -36,7 +51,7 @@ object MiscSQLError extends Diagnosed {
 
 
 
-trait PostgresError extends SQLError {
+trait PostgresError[E] extends SQLError[E] {
 
     def detail: String
 }
@@ -49,9 +64,11 @@ case class MiscPSQLError(
     dbURL: Option[String] = None,
     table: Option[String] = None,
     detail: String = ""
-) extends PostgresError {
+) extends PostgresError[MiscPSQLError] {
 
     def cause = Some(this.sqlError)
+
+    def withURL(url: String) = this.copy(dbURL = Some(url))
 
 }
 object MiscPSQLError extends Diagnosed {
@@ -65,11 +82,11 @@ object MiscPSQLError extends Diagnosed {
 
 
 
-private[errors] trait FailedConstraint extends PostgresError {
+private[errors] trait FailedConstraint[E] extends PostgresError[E] {
     def constraint: String
 }
 
-private[errors] trait ForeignKeyViolation extends FailedConstraint {
+private[errors] trait ForeignKeyViolation[E] extends FailedConstraint[E] {
 
     def key: String
     def foreignTable: String
@@ -85,7 +102,10 @@ case class UniqueKeyViolation(
     table: Option[String] = None,
     detail: String = "",
     cause: Option[Throwable] = None
-) extends FailedConstraint
+) extends FailedConstraint[UniqueKeyViolation] {
+
+    def withURL(url: String) = this.copy(dbURL = Some(url))
+}
 
 object UniqueKeyViolation extends Diagnosed {
 
