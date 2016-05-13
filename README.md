@@ -6,16 +6,18 @@ At this stage, I have shifted to the more short-term goal of developing a genera
 
 ### Points of Interest
 
-**Error classes and mapping**  
-classes: https://github.com/ShaunTS/GoogleDiplomat/tree/master/app/libs/errors  
+[**Error classes and mapping**](https://github.com/ShaunTS/GoogleDiplomat/tree/master/app/libs/errors)  
 tests: https://github.com/ShaunTS/GoogleDiplomat/blob/master/test/ErrorSpec.scala
 
-**JsParam[A] utility for wrapping key-value pairs, while preserving the type and json-serializer of the wrapped type `A`**  
-source: https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/models/JsParams.scala  
+[**JsParam[A]**](https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/models/JsParams.scala)  
+Utility for wrapping key-value pairs, while preserving the type and json-serializer of the wrapped type `A`
 tests: https://github.com/ShaunTS/GoogleDiplomat/blob/master/test/JsParamSpec.scala
 
 **Postgres Evolutions**  
 https://github.com/ShaunTS/GoogleDiplomat/blob/master/conf/evolutions/default/1.sql
+  
+[**PSQLHandler (Postgres database handler)**](https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/libs/PSQLHandler.scala)  
+Functionally defines how data will be sent to and from a Postgres database. That is to say every function in the defining class `PSQLFunctions` will accept some other function that uses a [`java.sql.Connection`](https://docs.oracle.com/javase/7/docs/api/java/sql/Connection.html), execute the function within the scope of an open connection, and catch any exceptions that may occur mapping them to [custom error classes](https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/libs/errors/PostgresErrors.scala)  
   
   
 **_In-Progress:_**
