@@ -47,6 +47,10 @@ case class JsParam[A](
     }
 
     def withValue(value: A): JsParam[A] = this.copy(value = Some(value))
+
+    def isEmpty: Boolean = this.value.isEmpty
+
+    def nonEmpty: Boolean = this.value.nonEmpty
 }
 object JsParam {
 
@@ -65,6 +69,8 @@ object JsParam {
 abstract class JsParamList[L] {
 
     def params: Seq[JsParam[_]]
+
+    def flatten: Seq[JsParam[_]] = params.filter(_.nonEmpty)
 
     def apply[A: ClassTag](key: String): Option[A] =
         this.params.collectFirst {
@@ -99,7 +105,7 @@ abstract class JsParamList[L] {
         .filterNot(_ == "{}")
 
 }
-abstract class JsParamLists[L <: JsParamList[L]] {
+abstract class JsParamLists[L <: JsParamList[L]] extends JsonOps {
 
     def apply(p: Seq[JsParam[_]]): L
 
@@ -107,11 +113,22 @@ abstract class JsParamLists[L <: JsParamList[L]] {
 
     def default: L = apply(defaultKeys)
 
+    def parse(opt: Option[String]): L = opt.map(parse).getOrElse(this.default)
+
+    def parse(json: String): L =
+    (for {
+        jsValue <- JsonHandler.parse(json)
+        list <- JsonHandler.fromJson[L](jsValue)
+    } yield list).getOrElse(this.default)
+
     implicit def writes: Writes[L] = new Writes[L] {
 
         def writes(jspList: L) = jspList.toJson
     }
 
+    /**
+     * @todo add error handling for missing required fields
+     */
     implicit def reads: Reads[L] = new Reads[L] {
 
         def reads(json: JsValue): JsResult[L] = {
