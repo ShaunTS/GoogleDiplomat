@@ -1,33 +1,47 @@
 package test.unit.models
 
-import sts.diplomat.models._
-
+import org.specs2.matcher.DisjunctionMatchers
 import org.specs2.mutable._
 import play.api.test._
 import play.api.test.Helpers._
+import scalaz.{\/, \/-}
+import sts.diplomat.models._
+import sts.libs.errors._
+import sts.test.WithSQL
 
-object NearbyRequestSpec extends Specification {
+object NearbyRequestSpec extends PlaySpecification with DisjunctionMatchers {
 
+    import NearbyTestData._
 
     "The Nearby Search Request model" should {
 
-        val library = Coords(41.4804518, -73.2200572)
+        "Read and parse a NearbyRequest from DB" in new WithSQL(fakeRequests) {
 
-        val req = NearbyRequest.empty.copy(
-            loc = library,
-            radius = 1000
-        )
+            val result: \/[GenError, NearbyRequest] = NearbyRequest.find(id = 1L)
 
-        "Create a Nearby Request" in new WithApplication {
+            result must be_\/-
 
-            val res = NearbyRequest.create(req)
+            val \/-(request) = result
 
-            println("------------------------------------------")
-            // println(req.extraParams.stringOpt)
-            println("next id = " + res)
-            println("------------------------------------------")
+            request.id must beSome(1L)
 
-            success
+            request.extraParams.flatten.size must be_==(3)
+
+            val types = request.extraParams[List[String]]("types").toList.flatten
+
+            types.length must be_==(6)
         }
     }
+}
+
+object NearbyTestData {
+
+    val fakeRequests = "test/snapshots/nearbyRequests.sql"
+
+    val library = Coords(41.4804518, -73.2200572)
+
+    val libRequest = NearbyRequest.empty.copy(
+        loc = library,
+        radius = 750
+    )
 }
