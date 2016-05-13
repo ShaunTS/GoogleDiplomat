@@ -14,7 +14,7 @@ libraryDependencies ++= Seq(
     ws,
     evolutions,
     specs2 % Test,
-    "com.typesafe.play" %% "anorm" % "2.4.0",
+    "com.typesafe.play" %% "anorm" % "2.5.1",
     "mysql" % "mysql-connector-java" % "5.1.25",
     "org.postgresql" % "postgresql" % "9.4.1208.jre7",
     "org.scalaz" %% "scalaz-core" % "7.1.0",

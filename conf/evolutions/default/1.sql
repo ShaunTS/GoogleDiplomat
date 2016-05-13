@@ -253,6 +253,7 @@ CREATE TABLE IF NOT EXISTS "nearby_search_requests" (
     "lat" double precision NOT NULL,
     "lng" double precision NOT NULL,
     "radius" integer NOT NULL,
+    "pg_token" text NULL DEFAULT NULL,
     "params" json NULL DEFAULT NULL
 );
 
