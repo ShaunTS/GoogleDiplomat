@@ -12,51 +12,9 @@ import sts.libs.errors.GenError
 import sts.libs.json.{JsParam, JsParamList, JsParamLists}
 
 
-case class Junk(
-    id: Option[Long],
-    name: String,
-    rank: Double
-)
-object Junk {
-
-    implicit val writes: Writes[Junk] = (
-        (__ \ "id").writeNullable[Long] and
-        (__ \ "name").write[String] and
-        (__ \ "rank").write[Double]
-    )(unlift(Junk.unapply))
-
-    implicit val reads: Reads[Junk] = (
-        (__ \ "id").readNullable[Long] and
-        (__ \ "name").read[String] and
-        (__ \ "rank").read[Double]
-    )(Junk.apply _)
-
-    def altReads(key: String): Reads[JsObject] =
-        (__ \ key).read[JsObject]
-
-}
-
-case class JunkParams(params: Seq[JsParam[_]]) extends JsParamList[JunkParams] {
-
-    def withValues(p: JsParam[_] *): JunkParams = this.copy(params = this.mergeValues(p))
-}
-object JunkParams extends JsParamLists[JunkParams] {
-
-    def defaultKeys = Seq(
-        JsParam.empty[Long]("batchId"),
-        JsParam.empty[String]("orderBy"),
-        JsParam.empty[Junk]("thing"),
-        JsParam.empty[List[String]]("types")
-    )
-}
-
-
 class JsParamSpec extends Specification with DisjunctionMatchers {
 
-    val testJsonString =
-        """{"batchId":2,"orderBy":"name","thing":{"id":1,"name":"dog","rank":1},"types":["mosque","park","casino"]}"""
-
-    val j1 = Junk(Some(1), "pizza", 1.0)
+    import JsParamTestData._
 
 t
     "JsParam" should {
@@ -183,3 +141,52 @@ br
 
 }
 
+object JsParamTestData {
+
+
+    case class JunkParams(params: Seq[JsParam[_]]) extends JsParamList[JunkParams] {
+
+        def withValues(p: JsParam[_] *): JunkParams = this.copy(params = this.mergeValues(p))
+    }
+    object JunkParams extends JsParamLists[JunkParams] {
+
+        def defaultKeys = Seq(
+            JsParam.empty[Long]("batchId"),
+            JsParam.empty[String]("orderBy"),
+            JsParam.empty[Junk]("thing"),
+            JsParam.empty[List[String]]("types")
+        )
+    }
+
+
+    case class Junk(
+        id: Option[Long],
+        name: String,
+        rank: Double
+    )
+    object Junk {
+
+        implicit val writes: Writes[Junk] = (
+            (__ \ "id").writeNullable[Long] and
+            (__ \ "name").write[String] and
+            (__ \ "rank").write[Double]
+        )(unlift(Junk.unapply))
+
+        implicit val reads: Reads[Junk] = (
+            (__ \ "id").readNullable[Long] and
+            (__ \ "name").read[String] and
+            (__ \ "rank").read[Double]
+        )(Junk.apply _)
+
+        def altReads(key: String): Reads[JsObject] =
+            (__ \ key).read[JsObject]
+
+    }
+
+
+
+    val testJsonString =
+        """{"batchId":2,"orderBy":"name","thing":{"id":1,"name":"dog","rank":1},"types":["mosque","park","casino"]}"""
+
+    val j1 = Junk(Some(1), "pizza", 1.0)
+}
