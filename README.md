@@ -14,6 +14,8 @@ Utility for wrapping key-value pairs, while preserving the type and json-seriali
 * **Postgres Evolutions**  ([Source](https://github.com/ShaunTS/GoogleDiplomat/blob/master/conf/evolutions/default/1.sql))  
    
 * **PSQLHandler `(Postgres database handler)`**  ([Source](https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/libs/PSQLHandler.scala))  
-Functionally defines how data will be sent to and from a Postgres database. That is to say every function in the defining class `PSQLFunctions` will accept some other function that uses a [`java.sql.Connection`](https://docs.oracle.com/javase/7/docs/api/java/sql/Connection.html), execute the function within the scope of an open connection, and catch any exceptions that may occur mapping them to [custom error classes](https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/libs/errors/PostgresErrors.scala).
-
+Functionally defines how data will be sent to and from a Postgres database. That is to say every function in the defining class `PSQLFunctions` will accept some other function that uses a [`java.sql.Connection`](https://docs.oracle.com/javase/7/docs/api/java/sql/Connection.html), execute the function within the scope of an open connection, and catch any exceptions that may occur mapping them to [custom error classes](https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/libs/errors/PostgresErrors.scala).  
   
+* **NearbyRequest**  ([Source](https://github.com/ShaunTS/GoogleDiplomat/blob/master/app/models/experimental/NearbyRequest.scala) / [Tests](https://github.com/ShaunTS/GoogleDiplomat/blob/master/test/experimental/NearbyRequestSpec.scala))  
+Model defining any and all parameters used when forming a request to the [Google Places Api](https://developers.google.com/places/web-service/search#PlaceSearchRequests) web service.  
+    `(Includes examples of JsParams and PSQLHandler in use)`  
