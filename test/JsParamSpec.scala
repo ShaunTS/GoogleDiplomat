@@ -4,11 +4,12 @@ package test.unit.libs.json
 import org.specs2.matcher.DisjunctionMatchers
 import org.specs2.mutable._
 import play.api.libs.functional.syntax._
-import play.api.libs.json.{__, Reads, Writes, Json, JsObject}
+import play.api.libs.json.{__, Reads, Writes, Json, JsObject, JsError}
+// import play.api.libs.json._
 import play.api.test._
 import play.api.test.Helpers._
 import scalaz.{-\/, \/, \/-}
-import sts.libs.errors.GenError
+import sts.libs.errors.{GenError, JsonMissingPath, JsErrorInfo, Info}
 import sts.libs.json.{JsParam, JsParamList, JsParamLists}
 
 
@@ -137,6 +138,29 @@ br
                 exactly("mosque", "park", "casino")
             )
         }
+
+        tag("required")
+        "Return a JsError when a required field is missing/null/malformed in the json" in {
+            val jsVals = List(missingRequired, nullRequired, malformRequired).map(Json.parse)
+
+            val errors = jsVals.map(Json.fromJson[JunkParams]).collect {
+                case jse: JsError => jse
+            }
+
+            errors must haveLength(3)
+
+            val List(missingReq, nullReq, malformReq) = errors
+
+            Info(missingReq).message must equalTo("""error.path.missing @ 'obj.thing' in {"batchId":3}""")
+
+            Info(nullReq).message must equalTo(
+                """error.path.missing @ 'obj.thing.rank' in {"batchId":4,"thing":null}"""
+            )
+
+            Info(malformReq).message must equalTo(
+                """error.path.missing @ 'obj.thing.rank' in {"batchId":5,"thing":{"id":2}}"""
+            )
+        }
     }
 
 }
@@ -151,13 +175,12 @@ object JsParamTestData {
     object JunkParams extends JsParamLists[JunkParams] {
 
         def defaultKeys = Seq(
-            JsParam.empty[Long]("batchId"),
+            JsParam.empty[List[String]]("types"),
             JsParam.empty[String]("orderBy"),
-            JsParam.empty[Junk]("thing"),
-            JsParam.empty[List[String]]("types")
+            JsParam.empty[Long]("batchId").require,
+            JsParam.empty[Junk]("thing").require
         )
     }
-
 
     case class Junk(
         id: Option[Long],
@@ -183,10 +206,14 @@ object JsParamTestData {
 
     }
 
-
-
     val testJsonString =
         """{"batchId":2,"orderBy":"name","thing":{"id":1,"name":"dog","rank":1},"types":["mosque","park","casino"]}"""
+
+    val missingRequired = """{"batchId":3}"""
+
+    val nullRequired = """{"batchId":4,"thing":null}"""
+
+    val malformRequired = """{"batchId":5,"thing":{"id":2}}"""
 
     val j1 = Junk(Some(1), "pizza", 1.0)
 }

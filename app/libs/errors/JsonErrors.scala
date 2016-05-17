@@ -5,13 +5,7 @@ import java.lang.Throwable
 import play.api.libs.json._
 import scalaz.{-\/, \/, \/-}
 import sts.libs.functional.PiecewiseFunction
-
-object JsErrorMessage {
-
-    def apply(jse: JsError): String = jse.errors.headOption.map {
-        case (_, (v::vs)) => v.message
-    }.getOrElse("")
-}
+import play.api.data.validation.ValidationError
 
 trait JsonPlayError extends GenError {
 
@@ -19,9 +13,15 @@ trait JsonPlayError extends GenError {
 
     def source: \/[String, JsValue]
 
+    def path: JsPath
+
     def withSource(src: String): JsonPlayError
 
     def withSource(src: JsValue): JsonPlayError
+
+    def mapPath(f: JsPath => JsPath): JsonPlayError
+
+    def stringify: String = this.source.fold(identity, Json.stringify(_))
 
     def showSrc: String = this.source.fold(
         {
@@ -30,10 +30,21 @@ trait JsonPlayError extends GenError {
         },
         Json.prettyPrint(_)
     )
+
+    def toPlayError: JsError = {
+        val details = List(
+            Some(this.message),
+            Some(this.path.toJsonString).filterNot(_ => this.path.toString.isEmpty).map(" @ '" + _ + "'"),
+            Some(this.stringify).filterNot(_.isEmpty).map(" in " + _)
+        ).flatten.mkString
+
+        MakeJsError(details, this.path)
+    }
 }
 
 case class MiscJsonError(
     message: String,
+    path: JsPath,
     playError: JsError,
     source: \/[String, JsValue] = -\/("")
 ) extends JsonPlayError {
@@ -43,6 +54,8 @@ case class MiscJsonError(
     def withSource(src: String) = this.copy(source = -\/(src))
 
     def withSource(src: JsValue) = this.copy(source = \/-(src))
+
+    def mapPath(f: JsPath => JsPath) = this.copy(path = f(this.path))
 }
 object MiscJsonError {
 
@@ -50,7 +63,11 @@ object MiscJsonError {
         case jse => apply(jse)
     }
 
-    def apply(jse: JsError): MiscJsonError = MiscJsonError(JsErrorMessage(jse), jse)
+    def apply(jse: JsError): MiscJsonError = {
+        val JsErrorInfo(jsPath, msg) = Info(jse)
+
+        MiscJsonError(msg, jsPath, jse)
+    }
 }
 
 
@@ -66,17 +83,19 @@ case class JsonMissingPath(
     def withSource(src: String) = this.copy(source = -\/(src))
 
     def withSource(src: JsValue) = this.copy(source = \/-(src))
+
+    def mapPath(f: JsPath => JsPath) = this.copy(path = f(this.path))
 }
 object JsonMissingPath {
 
     def diagnose = PartialFunction[JsError, JsonMissingPath] {
-        case jse if(JsErrorMessage(jse) equals "error.path.missing") => apply(jse)
+        case jse if(Info(jse).message containsSlice "error.path.missing") => apply(jse)
     }
 
     def apply(jse: JsError): JsonMissingPath = {
-        val (path, invalids) = jse.errors.head
+        val JsErrorInfo(path, message) = Info(jse)
 
-        JsonMissingPath(invalids.take(1).mkString, path, jse)
+        JsonMissingPath(message, path, jse)
     }
 }
 
@@ -84,6 +103,7 @@ case class JsonUnexpectedType(
     message: String,
     path: JsPath,
     playError: JsError,
+    expectedType: String,
     source: \/[String, JsValue] = -\/("")
 ) extends JsonPlayError {
 
@@ -92,17 +112,19 @@ case class JsonUnexpectedType(
     def withSource(src: String) = this.copy(source = -\/(src))
 
     def withSource(src: JsValue) = this.copy(source = \/-(src))
+
+    def mapPath(f: JsPath => JsPath) = this.copy(path = f(this.path))
 }
 object JsonUnexpectedType {
 
     def diagnose = PartialFunction[JsError, JsonUnexpectedType] {
-        case jse if(JsErrorMessage(jse) containsSlice "error.expected") => apply(jse)
+        case jse if(Info(jse).message containsSlice "error.expected") => apply(jse)
     }
 
     def apply(jse: JsError): JsonUnexpectedType = {
-        val (path, invalids) = jse.errors.head
+        val JsErrorInfo(path, message) = Info(jse)
 
-        JsonUnexpectedType(invalids.take(1).mkString, path, jse)
+        JsonUnexpectedType(message, path, jse, message.replace("error.expected.", ""))
     }
 }
 
@@ -115,18 +137,24 @@ case class JsonParseError(
     colB: Option[Int] = None
 ) extends JsonPlayError {
 
+    val path = JsPath()
+
     def playError = JsError(
-        JsPath(List(KeyPathNode(""))), this.message
+        MakeJsPath(""), this.message
     )
 
     def withSource(src: String) = this.copy(source = -\/(src))
 
     def withSource(src: JsValue) = this.copy(source = \/-(src))
 
+    def mapPath(f: JsPath => JsPath) = this.copy()
+
     def withSourceObj(json: Object): JsonParseError = json match {
         case js: String => this.copy(source = -\/(js))
         case _ => this
     }
+
+    override def toPlayError: JsError = MakeJsError(this.message)
 }
 object JsonParseError {
 
@@ -161,4 +189,56 @@ object JsonParseError {
             colB = Some(loc.getColumnNr)
         ).withSourceObj(loc.getSourceRef)
     }
+}
+
+case class JsMissingRequiredField(
+    message: String,
+    path: JsPath,
+    playError: JsError,
+    source: \/[String, JsValue] = -\/("")
+) extends JsonPlayError {
+
+    def cause = None
+
+    def withSource(src: String) = this.copy(source = -\/(src))
+
+    def withSource(src: JsValue) = this.copy(source = \/-(src))
+
+    def mapPath(f: JsPath => JsPath) = this.copy(path = f(this.path))
+}
+object JsMissingRequiredField {
+
+    def apply(jse: JsonPlayError, expectedPath: String): JsMissingRequiredField =
+        JsMissingRequiredField(
+            message = jse.message,
+            playError = jse.playError,
+            source = jse.source,
+            path = List(MakeJsPath(expectedPath), jse.path).distinct
+                .fold(JsPath())(_ ++ _)
+        )
+}
+
+
+case class JsErrorInfo(path: JsPath, message: String)
+
+object Info {
+
+    def apply(jse: JsError): JsErrorInfo = jse.errors.headOption.map {
+        case (path, (v::vs)) => JsErrorInfo(path, v.message)
+    }.getOrElse(JsErrorInfo(JsPath(), ""))
+}
+
+object MakeJsPath {
+
+    def apply(stringPath: String): JsPath = stringPath match {
+        case "" => JsPath()
+        case _ => JsPath(List(KeyPathNode(stringPath)))
+    }
+}
+
+object MakeJsError {
+
+    def apply(msg: String, path: JsPath = JsPath()) = JsError(
+        Seq(path -> Seq(ValidationError(Seq(msg))))
+    )
 }

@@ -4,7 +4,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import scala.reflect.ClassTag
 import scalaz.{-\/, \/, \/-}
-import sts.libs.errors.{GenError, JsonUnexpectedType}
+import sts.libs.errors.{GenError, JsonPlayError, JsMissingRequiredField, JsonUnexpectedType}
 import sts.libs.JsonOps
 import sts.util.Jsonables._
 
@@ -33,6 +33,11 @@ case class JsParam[A](
 
     def stringify: String = Json.stringify(this.toJson)
 
+    def ifRequired(e: GenError): GenError = (e -> this.required) match {
+        case (jse: JsonPlayError, true) => JsMissingRequiredField(jse, this.key)
+        case _ => e
+    }
+
     def innerJson(outer: JsValue): \/[GenError, JsValue] = JsonHandler.fromJson(outer) {
         (__ \ this.key).read[JsValue]
     }
@@ -43,7 +48,7 @@ case class JsParam[A](
             jsp <- JsonHandler.fromJson(inner)(this.rd)
         } yield jsp ).map {
             case obj: A => this.withValue(obj)
-        }
+        }.leftMap(ifRequired)
     }
 
     def withValue(value: A): JsParam[A] = this.copy(value = Some(value))
@@ -126,20 +131,21 @@ abstract class JsParamLists[L <: JsParamList[L]] extends JsonOps {
         def writes(jspList: L) = jspList.toJson
     }
 
-    /**
-     * @todo add error handling for missing required fields
-     */
     implicit def reads: Reads[L] = new Reads[L] {
 
         def reads(json: JsValue): JsResult[L] = {
-            val jsResults = defaultKeys.map(_ fromJson json)
+
+            val jsResults: Seq[ \/[GenError, JsParam[_]] ] = defaultKeys.map(_ fromJson json)
 
             val jsParams: Seq[JsParam[_]] = jsResults.collect {
                 case \/-(jsp) => jsp
             }
 
-            jsResults.collectFirst { case -\/(e: JsonUnexpectedType) => e } match {
-                case Some(wrongType) => wrongType.playError
+            jsResults.collectFirst {
+                case -\/(e: JsonUnexpectedType) => e.withSource(json)
+                case -\/(e: JsMissingRequiredField) => e.withSource(json)
+            } match {
+                case Some(failed) => failed.toPlayError
                 case _ => JsSuccess(apply(jsParams), JsPath(List(KeyPathNode(""))))
             }
         }
