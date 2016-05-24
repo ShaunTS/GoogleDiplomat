@@ -19,12 +19,19 @@ object PostgresHelpers {
             val MetaDataItem(qualified, nullable, clazz) = meta
 
             value match {
-                case obj: PGobject => pl("type")(obj.getType)
-                pl("value")(obj.getValue)
+                case obj: PGobject => pl("type") {
+                    s"""
+                        type: ${obj.getType}
+
+                        value >${obj.getValue}<
+                    """
+                }
             }
             value match {
                 case obj: PGobject => Right(obj)
-                case _ => Left(TypeDoesNotMatch(s"Cannot convert $value: ${className(value)} to String for column $qualified"))
+                case _ => pl("toColumn LEFT") {
+                    Left(TypeDoesNotMatch(s"Cannot convert $value: ${className(value)} to String for column $qualified"))
+                }
             }
         }
 }

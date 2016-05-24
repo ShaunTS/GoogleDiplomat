@@ -43,9 +43,9 @@ object NearbyRequest extends PostgresOps {
         Coords.parser("nearby_search_requests") ~
         int("nearby_search_requests.radius") ~
         get[Option[String]]("nearby_search_requests.pg_token") ~
-        get[Option[PGobject]]("nearby_search_requests.params").map(_.map(_.getValue)) map {
-            case id~coords~radius~token~paramsJSON =>
-                NearbyRequest(id, coords, radius, token, NearbyParams.parse(paramsJSON))
+        get[Option[PGobject]]("nearby_search_requests.params") map {
+            case id~coords~radius~token~pgJSON =>
+                NearbyRequest(id, coords, radius, token, NearbyParams.parse(pgJSON.map(_.getValue)))
         }
     }
 
