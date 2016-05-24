@@ -9,6 +9,8 @@ import sts.diplomat.models._
 import sts.libs.errors._
 import sts.test.WithSQL
 
+import sts.util.debug.helpers._
+
 object NearbyRequestSpec extends PlaySpecification with DisjunctionMatchers {
 
     import NearbyTestData._
@@ -30,6 +32,28 @@ object NearbyRequestSpec extends PlaySpecification with DisjunctionMatchers {
             val types = request.extraParams[List[String]]("types").toList.flatten
 
             types.length must be_==(6)
+        }
+
+        "Read a NearbySearch model with NULL json" in new WithSQL(fakeRequests) {
+
+            val result: \/[GenError, NearbyRequest] = NearbyRequest.find(id = 2L)
+
+            result must be_\/-
+
+            val \/-(request) = result
+
+            request.extraParams.flatten.size must be_==(0)
+        }
+
+        "Read a NearbyRequest model with empty json" in new WithSQL(fakeRequests) {
+
+            val result: \/[GenError, NearbyRequest] = NearbyRequest.find(id = 3L)
+
+            result must be_\/-
+
+            val \/-(request) = result
+
+            request.extraParams.flatten.size must be_==(0)
         }
     }
 }
