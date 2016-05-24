@@ -5,11 +5,11 @@ import org.specs2.matcher.DisjunctionMatchers
 import org.specs2.mutable._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{__, Reads, Writes, Json, JsObject, JsError}
-// import play.api.libs.json._
 import play.api.test._
 import play.api.test.Helpers._
 import scalaz.{-\/, \/, \/-}
-import sts.libs.errors.{GenError, JsonMissingPath, JsErrorInfo, Info}
+import sts.libs.errors.{GenError, JsonMissingPath}
+import sts.play.json.helpers.error.{JsErrorInfo, JSEInfo => Info}
 import sts.libs.json.{JsParam, JsParamList, JsParamLists}
 
 
@@ -29,7 +29,6 @@ t
             stringJson must beSome("""{"junk":{"id":1,"name":"pizza","rank":1}}""")
         }
 
-br
         "Un-wrap JsParam json, returning internal json representing the wrapped object" in {
 
             val testJson: JsObject = Json.obj(
@@ -47,7 +46,6 @@ br
             lamaJson.map(Json.stringify) must be_\/-("""{"id":2,"name":"lama","rank":3.2}""")
         }
 
-br
         "Construct an empty JsParam, and convert to JsNull" in {
             val jsp = JsParam.empty[Junk]("garb")
 
@@ -56,7 +54,6 @@ br
             stringJson must equalTo("""{"garb":null}""")
         }
 
-br
         "Read a JsParam from json, and return an instance of the wrapped class" in {
             val jsp = JsParam.empty[Junk]("j2")
 
@@ -77,7 +74,6 @@ br
     }
 
 br
-br
     "A JsParamList concrete class" should {
 
         "Construct an empty param list and convert it to an empty json object" in {
@@ -88,7 +84,6 @@ br
             Json.stringify(json) must equalTo("{}")
         }
 
-br
         "Populate an empty param list and convert to json" in {
 
             val jspList = JunkParams.default.withValues(
@@ -105,7 +100,6 @@ br
             )
         }
 
-br
         "Partially populate a param list and convert to json" in {
             val jspList = JunkParams.default.withValues(
                 JsParam("thing" -> j1),
@@ -119,7 +113,6 @@ br
             )
         }
 
-br
         "Parse and read a full param list from json" in {
             val jsVal = Json.parse(testJsonString)
 

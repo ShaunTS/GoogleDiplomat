@@ -4,7 +4,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.{__, Reads, Writes, Json}
 import anorm.{ ~, RowParser }
 import anorm.SqlParser._
-
+import sts.play.json.helpers.ReadAsString
 /** CONTENTS
  *
  *  Classes used to represents Geocoordinate value pairs, specifically for the purose
@@ -28,8 +28,8 @@ object Coords {
     implicit val writes: Writes[Coords] = Json.writes[Coords]
 
     implicit val reads: Reads[Coords] = (
-        (__ \ "lat").read[Double] and
-        (__ \ "lng").read[Double]
+        (__ \ "lat").read[Double](ReadAsString.toDouble) and
+        (__ \ "lng").read[Double](ReadAsString.toDouble)
     )(Coords.apply _)
 
     def empty: Coords = Coords(0D, 0D)

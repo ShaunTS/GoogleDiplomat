@@ -7,6 +7,8 @@ import scalaz.{-\/, \/, \/-}
 import sts.libs.functional.PiecewiseFunction
 import play.api.data.validation.ValidationError
 
+import sts.play.json.helpers.error.{JSEInfo => Info, _}
+
 trait JsonPlayError extends GenError {
 
     def playError: JsError
@@ -216,29 +218,4 @@ object JsMissingRequiredField {
             path = List(MakeJsPath(expectedPath), jse.path).distinct
                 .fold(JsPath())(_ ++ _)
         )
-}
-
-
-case class JsErrorInfo(path: JsPath, message: String)
-
-object Info {
-
-    def apply(jse: JsError): JsErrorInfo = jse.errors.headOption.map {
-        case (path, (v::vs)) => JsErrorInfo(path, v.message)
-    }.getOrElse(JsErrorInfo(JsPath(), ""))
-}
-
-object MakeJsPath {
-
-    def apply(stringPath: String): JsPath = stringPath match {
-        case "" => JsPath()
-        case _ => JsPath(List(KeyPathNode(stringPath)))
-    }
-}
-
-object MakeJsError {
-
-    def apply(msg: String, path: JsPath = JsPath()) = JsError(
-        Seq(path -> Seq(ValidationError(Seq(msg))))
-    )
 }
