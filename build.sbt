@@ -11,9 +11,9 @@ scalacOptions := Seq("-unchecked", "-deprecation", "-feature")
 libraryDependencies ++= Seq(
     jdbc,
     cache,
-    ws,
     evolutions,
     specs2 % Test,
+    "com.typesafe.play" %% "play-ws" % "2.5.1",
     "com.typesafe.play" %% "anorm" % "2.5.1",
     "mysql" % "mysql-connector-java" % "5.1.25",
     "org.postgresql" % "postgresql" % "9.4.1208.jre7",

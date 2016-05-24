@@ -114,7 +114,7 @@ object EvoScript {
 
     def apply(path: String): EvoScript = {
 
-        val content = io.Source.fromFile(path).mkString
+        val content = scala.io.Source.fromFile(path).mkString
 
         EvoScript(path, content, Ups(content), Downs(content))
     }

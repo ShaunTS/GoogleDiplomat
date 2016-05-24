@@ -1,19 +1,22 @@
 package sts.test
 
-import javax.inject.Inject
 import org.specs2.execute.{ AsResult, Result }
 import org.specs2.mutable.Around
 import org.specs2.specification.Scope
 import play.api.Application
-import play.api.db.{ Database, NamedDatabase }
+import play.api.db.Database
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test._
 import sts.libs.diplomat.TestComponents
 import sts.util.db.EvoScriptRunner
-import sts.util.debug.psqlHelpers._
 
 abstract class WithSQL(val app: Application, val sqlFiles: String *) extends Around with Scope {
 
-    def this(sqlFiles: String *) = this(FakeApplication(), sqlFiles: _ *)
+    def this(sqlFiles: String *) = this(GuiceApplicationBuilder().build(), sqlFiles: _ *)
+
+    implicit def implicitApp = app
+
+    implicit def implicitMaterializer = app.materializer
 
     lazy implicit val testDB: Database = app.injector.instanceOf[TestComponents].db
 
