@@ -118,7 +118,9 @@ abstract class JsParamLists[L <: JsParamList[L]] extends JsonOps {
 
     def default: L = apply(defaultKeys)
 
-    def parse(opt: Option[String]): L = opt.map(parse).getOrElse(this.default)
+    def empty: L = apply(Nil)
+
+    def parse(opt: Option[String]): L = opt.map(parse).getOrElse(this.empty)
 
     def parse(json: String): L =
     (for {
